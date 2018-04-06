@@ -39,22 +39,44 @@
                            0.0 1.0 0.0)
            for i from 0 below (length tempar) do
              (setf (gl:glaref g-vertex-buffer-data i) (aref tempar i)))
-        (let ((vertex-buffer (gl:create-vertex-array)))
+        (let* ((vertex-buffer (gl:create-vertex-array))
+               (projection
+                 (rtg-math.projection:perspective (coerce +screen-width+ 'float)
+                                                  (coerce +screen-height+ 'float)
+                                                  0.1
+                                                  100.0
+                                                  (rtg-math:radians 45)))
+               (view (rtg-math.matrix4:look-at (rtg-math.vector3:make 0.0 -1.0 0.0)
+                                               (rtg-math.vector3:make 0.0 0.0 0.0)
+                                               (rtg-math.vector3:make 4.0 3.0 3.0)))
+               (model (rtg-math.matrix4:identity))
+               (mvp (rtg-math.matrix4:*
+                     (rtg-math.matrix4:transpose view)
+                     ;view
+                     model)))
+
           (gl:bind-buffer :array-buffer vertex-buffer)
           (gl:buffer-data :array-buffer :static-draw g-vertex-buffer-data)
-          (let ((program (load-shaders #P"~/Programming/Lisp/opengl-learn/triangle.vertexshader"
-                                       #P"~/Programming/Lisp/opengl-learn/triangle.fragmentshader")))
-            (sdl2:with-event-loop ()
-              (:quit () t)
-              (:idle ()
-                     (gl:clear :color-buffer-bit :depth-buffer-bit)
-                     (gl:use-program program)
-                     (gl:enable-vertex-attrib-array 0)
-                     (gl:bind-buffer :array-buffer vertex-buffer)
-                     (gl:vertex-attrib-pointer 0 3 :float :false 0 (cffi:null-pointer))
-                     (gl:draw-arrays :triangles 0 3)
-                     (gl:disable-vertex-attrib-array 0)
-                     (sdl2:gl-swap-window win)))))))))
+          (let* ((program (load-shaders #P"~/Programming/Lisp/opengl-learn/triangle.vertexshader"
+                                       #P"~/Programming/Lisp/opengl-learn/triangle.fragmentshader"))
+                 (matrix-id (gl:get-uniform-location program "MVP")))
+            (block game
+              (sdl2:with-event-loop ()
+                (:keydown
+                 (:keysym keysym)
+                 (when (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-q)
+                   (return-from game)))
+                (:quit () t)
+                (:idle ()
+                       (gl:clear :color-buffer-bit :depth-buffer-bit)
+                       (gl:use-program program)
+                       (gl:uniform-matrix-4fv matrix-id (vector mvp))
+                       (gl:enable-vertex-attrib-array 0)
+                       (gl:bind-buffer :array-buffer vertex-buffer)
+                       (gl:vertex-attrib-pointer 0 3 :float :false 0 (cffi:null-pointer))
+                       (gl:draw-arrays :triangles 0 3)
+                       (gl:disable-vertex-attrib-array 0)
+                       (sdl2:gl-swap-window win))))))))))
 
 (defun load-shaders (vertex-file-path fragment-file-path)
   (let ((vertex-shader (load-shader vertex-file-path :vertex-shader))
@@ -93,45 +115,4 @@
   "Load file at PATH into list, each line being separate string."
   (with-open-file (in path)
     (loop for line = (read-line in nil 'eof nil)
-       while (not (eql line 'eof)) collect line)))
-
-
-;;One of the possible problems:
-
-;;[package opengl-learn]
-
-; file: /home/malice/Programming/Lisp/opengl-learn/opengl-learn.lisp
-; in: DEFUN MAIN
-;     (SDL2:WITH-EVENT-LOOP NIL
-;       (:QUIT T)
-;       (:IDLE (CL-OPENGL-BINDINGS:ENABLE-VERTEX-ATTRIB-ARRAY 0)
-;        (CL-OPENGL-BINDINGS:BIND-BUFFER :ARRAY-BUFFER OPENGL-LEARN::VERTEX-BUFFER)
-;        (CL-OPENGL-BINDINGS:VERTEX-ATTRIB-POINTER 0 3 :FLOAT :FALSE 0
-;                                                  (CFFI-SYS:NULL-POINTER))
-;        (CL-OPENGL-BINDINGS:DRAW-ARRAYS :TRIANGLES 0 3)
-;        (CL-OPENGL-BINDINGS:DISABLE-VERTEX-ATTRIB-ARRAY 0)))
-; --> WHEN IF PROGN SDL2:IN-MAIN-THREAD LET LAMBDA FUNCTION LET
-; --> UNWIND-PROTECT FLET BLOCK MULTIPLE-VALUE-BIND MULTIPLE-VALUE-CALL
-; --> BLOCK SB-C::%WITHIN-CLEANUP RETURN-FROM SDL2:WITH-SDL-EVENT
-; --> PLUS-C:C-LET LET MACROLET SYMBOL-MACROLET UNWIND-PROTECT FLET
-; --> BLOCK MULTIPLE-VALUE-BIND MULTIPLE-VALUE-CALL BLOCK
-; --> SB-C::%WITHIN-CLEANUP RETURN-FROM PROGN LOOP BLOCK
-; --> SB-LOOP::LOOP-BODY TAGBODY PROGN LOOP BLOCK LET
-; --> SB-LOOP::LOOP-BODY TAGBODY LET* CASE LET COND IF IF IF PROGN
-; ==>
-;   (LET ((0
-;          (PLUS-C:C-REF #:SDL-EVENT-66 SDL2-FFI:SDL-EVENT :USER
-;                        CL-OPENGL-BINDINGS:ENABLE-VERTEX-ATTRIB-ARRAY)))
-;     (CL-OPENGL-BINDINGS:BIND-BUFFER :ARRAY-BUFFER OPENGL-LEARN::VERTEX-BUFFER)
-;     (CL-OPENGL-BINDINGS:VERTEX-ATTRIB-POINTER 0 3 :FLOAT :FALSE 0
-;                                               (CFFI-SYS:NULL-POINTER))
-;     (CL-OPENGL-BINDINGS:DRAW-ARRAYS :TRIANGLES 0 3)
-;     (CL-OPENGL-BINDINGS:DISABLE-VERTEX-ATTRIB-ARRAY 0))
-;
-; caught ERROR:
-;   0 is not a symbol, and cannot be used as a variable.
-;
-
-
-;; Fix:
-;; No () in sdl2:event-loop clauses
+          while (not (eql line 'eof)) collect line)))

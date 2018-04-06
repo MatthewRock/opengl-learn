@@ -6,6 +6,7 @@
   :license "MIT"
   :depends-on (#:sdl2
                #:cl-opengl
+               #:rtg-math
                #:cffi)
   :serial t
   :components ((:file "package")
