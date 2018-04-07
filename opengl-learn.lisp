@@ -45,18 +45,18 @@
                                                   (coerce +screen-height+ 'float)
                                                   0.1
                                                   100.0
-                                                  (rtg-math:radians 45)))
-               (view (rtg-math.matrix4:look-at (rtg-math.vector3:make 0.0 -1.0 0.0)
+                                                  60.0))
+               (view (rtg-math.matrix4:look-at (rtg-math.vector3:make 0.0 1.0 0.0)
                                                (rtg-math.vector3:make 0.0 0.0 0.0)
                                                (rtg-math.vector3:make 4.0 3.0 3.0)))
                (model (rtg-math.matrix4:identity))
                (mvp (rtg-math.matrix4:*
-                     (rtg-math.matrix4:transpose view)
-                     ;view
+                     projection
+                     view
                      model)))
-
           (gl:bind-buffer :array-buffer vertex-buffer)
           (gl:buffer-data :array-buffer :static-draw g-vertex-buffer-data)
+
           (let* ((program (load-shaders #P"~/Programming/Lisp/opengl-learn/triangle.vertexshader"
                                        #P"~/Programming/Lisp/opengl-learn/triangle.fragmentshader"))
                  (matrix-id (gl:get-uniform-location program "MVP")))
