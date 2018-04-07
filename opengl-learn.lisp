@@ -41,19 +41,17 @@
              (setf (gl:glaref g-vertex-buffer-data i) (aref tempar i)))
         (let* ((vertex-buffer (gl:create-vertex-array))
                (projection
-                 (rtg-math.projection:perspective (coerce +screen-width+ 'float)
-                                                  (coerce +screen-height+ 'float)
-                                                  0.1
-                                                  100.0
-                                                  45.0))
-               (view (rtg-math.matrix4:look-at (rtg-math.vector3:make 0.0 1.0 0.0)
-                                               (rtg-math.vector3:make 4.0 3.0 3.0)
-                                               (rtg-math.vector3:make 0.0 0.0 0.0)))
-               (model (rtg-math.matrix4:identity))
-               (mvp (rtg-math.matrix4:*
-                     projection
-                     view
-                     model)))
+                 (box.math.mat4:perspective-projection 45.0
+                                                       (/ +screen-width+
+                                                          (coerce +screen-height+ 'float))
+                                                       0.1
+                                                       100))
+               (view (box.math.mat4:view ;also called look-at
+                      (box.math.vec3:make 4 3 3)
+                      (box.math.vec3:make 0 0 0)
+                      (box.math.vec3:make 0 1 0 )))
+               (model (box.math.mat4:id))
+               (mvp (rtg-math.matrix4:* projection view model)))
           (gl:bind-buffer :array-buffer vertex-buffer)
           (gl:buffer-data :array-buffer :static-draw g-vertex-buffer-data)
 
@@ -77,6 +75,9 @@
                        (gl:draw-arrays :triangles 0 3)
                        (gl:disable-vertex-attrib-array 0)
                        (sdl2:gl-swap-window win))))))))))
+
+(defun mat4* (&rest mats)
+  (reduce #'box.math.mat4:* mats :initial-value (box.math.mat4:id) :from-end t))
 
 (defun load-shaders (vertex-file-path fragment-file-path)
   (let ((vertex-shader (load-shader vertex-file-path :vertex-shader))

@@ -7,7 +7,9 @@
   :depends-on (#:sdl2
                #:cl-opengl
                #:rtg-math
+               #:mathkit
                #:cffi)
   :serial t
   :components ((:file "package")
+               (:file "utils")
                (:file "opengl-learn")))
