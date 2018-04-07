@@ -45,10 +45,10 @@
                                                   (coerce +screen-height+ 'float)
                                                   0.1
                                                   100.0
-                                                  60.0))
+                                                  45.0))
                (view (rtg-math.matrix4:look-at (rtg-math.vector3:make 0.0 1.0 0.0)
-                                               (rtg-math.vector3:make 0.0 0.0 0.0)
-                                               (rtg-math.vector3:make 4.0 3.0 3.0)))
+                                               (rtg-math.vector3:make 4.0 3.0 3.0)
+                                               (rtg-math.vector3:make 0.0 0.0 0.0)))
                (model (rtg-math.matrix4:identity))
                (mvp (rtg-math.matrix4:*
                      projection
